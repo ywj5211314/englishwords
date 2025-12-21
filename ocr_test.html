@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OCR测试页面</title>
+    <meta charset="utf-8">
+</head>
+<body>
+    <h1>OCR功能测试</h1>
+    <form action="http://localhost:8090/api/word-upload/upload-image" method="post" enctype="multipart/form-data">
+        <div>
+            <label for="grade">年级:</label>
+            <input type="number" id="grade" name="grade" value="1" required>
+        </div>
+        <br>
+        <div>
+            <label for="unit">单元:</label>
+            <input type="number" id="unit" name="unit" value="1" required>
+        </div>
+        <br>
+        <div>
+            <label for="image">选择图片:</label>
+            <input type="file" id="image" name="image" accept="image/*" required>
+        </div>
+        <br>
+        <button type="submit">上传并识别</button>
+    </form>
+</body>
+</html>
