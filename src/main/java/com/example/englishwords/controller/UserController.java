@@ -82,7 +82,18 @@ public class UserController {
         } else {
             System.out.println("Login failed for user: " + username);
             response.put("success", false);
-            response.put("message", "用户名或密码错误");
+            
+            // 登录失败时，尝试查询该用户信息，返回其年级信息
+            Optional<User> userExists = userService.getUserByUsername(username);
+            if (userExists.isPresent()) {
+                User user = userExists.get();
+                String gradeInfo = user.getGrade() != null ? user.getGrade() + "年级" : "未选择年级";
+                response.put("message", "用户名或密码错误（您注册的是" + gradeInfo + ")");
+                response.put("grade", user.getGrade());
+            } else {
+                response.put("message", "用户名或密码错误");
+            }
+            
             System.out.println("=== LOGIN FAILED ===");
             return ResponseEntity.status(401).body(response);
         }

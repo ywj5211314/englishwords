@@ -147,4 +147,39 @@ public class WordController {
         response.put("data", words);
         return ResponseEntity.ok(response);
     }
+    
+    /**
+     * 根据用户错题历史创建加权考试题目
+     * 优先考察学生的错题，错题次数越多，出现概率越高
+     * 
+     * 例如：学生错頔3次的单词会出现，和正确的单词平率是，比例为3:1
+     */
+    @GetMapping("/grade/{grade}/weighted-random")
+    public ResponseEntity<Map<String, Object>> getWeightedRandomWordsByGrade(
+            @PathVariable Integer grade,
+            @RequestParam Long userId,
+            @RequestParam(defaultValue = "0") Integer unit,
+            @RequestParam(defaultValue = "10") int count) {
+        List<Word> words = wordService.getWeightedRandomWordsByGrade(userId, grade, unit, count);
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", words);
+        return ResponseEntity.ok(response);
+    }
+    
+    /**
+     * 根据用户错题历史创建加权考试题目（按年级和单元）
+     */
+    @GetMapping("/grade/{grade}/unit/{unit}/weighted-random")
+    public ResponseEntity<Map<String, Object>> getWeightedRandomWordsByGradeAndUnit(
+            @PathVariable Integer grade,
+            @PathVariable Integer unit,
+            @RequestParam Long userId,
+            @RequestParam(defaultValue = "10") int count) {
+        List<Word> words = wordService.getWeightedRandomWordsByGrade(userId, grade, unit, count);
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", words);
+        return ResponseEntity.ok(response);
+    }
 }

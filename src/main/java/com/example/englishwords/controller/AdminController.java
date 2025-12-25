@@ -6,6 +6,7 @@ import com.example.englishwords.service.UserService;
 import com.example.englishwords.service.WordService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -22,6 +23,9 @@ public class AdminController {
 
     @Autowired
     private WordService wordService;
+    
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     // 获取所有用户
     @GetMapping("/users")
@@ -30,6 +34,122 @@ public class AdminController {
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         response.put("data", users);
+        return ResponseEntity.ok(response);
+    }
+    
+    // 添加新用户
+    @PostMapping("/user")
+    public ResponseEntity<Map<String, Object>> createUser(@RequestBody User user) {
+        Map<String, Object> response = new HashMap<>();
+        
+        // 检查用户名是否已存在
+        if (userService.existsByUsername(user.getUsername())) {
+            response.put("success", false);
+            response.put("message", "用户名已存在");
+            return ResponseEntity.badRequest().body(response);
+        }
+        
+        // 检查必要字段
+        if (user.getPassword() == null || user.getPassword().isEmpty()) {
+            response.put("success", false);
+            response.put("message", "密码不能为空");
+            return ResponseEntity.badRequest().body(response);
+        }
+        
+        // 设置默认角色
+        if (user.getRole() == null || user.getRole().isEmpty()) {
+            user.setRole("STUDENT");
+        }
+        
+        // 注册用户（密码会被加密）
+        User createdUser = userService.register(user);
+        response.put("success", true);
+        response.put("message", "用户创建成功");
+        response.put("data", createdUser);
+        return ResponseEntity.ok(response);
+    }
+    
+    // 编辑用户信息
+    @PutMapping("/user/{id}")
+    public ResponseEntity<Map<String, Object>> updateUser(@PathVariable Long id, @RequestBody Map<String, Object> updateData) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Optional<User> userOptional = userService.getUserById(id);
+        if (!userOptional.isPresent()) {
+            response.put("success", false);
+            response.put("message", "用户不存在");
+            return ResponseEntity.notFound().build();
+        }
+        
+        User user = userOptional.get();
+        
+        // 更新昵称
+        if (updateData.containsKey("nickName")) {
+            user.setNickName((String) updateData.get("nickName"));
+        }
+        
+        // 更新角色
+        if (updateData.containsKey("role")) {
+            user.setRole((String) updateData.get("role"));
+        }
+        
+        // 更新年级
+        if (updateData.containsKey("grade")) {
+            Object gradeObj = updateData.get("grade");
+            if (gradeObj != null) {
+                if (gradeObj instanceof Integer) {
+                    user.setGrade((Integer) gradeObj);
+                } else if (gradeObj instanceof String) {
+                    try {
+                        user.setGrade(Integer.parseInt((String) gradeObj));
+                    } catch (NumberFormatException e) {
+                        user.setGrade(null);
+                    }
+                }
+            }
+        }
+        
+        // 更新密码（如果提供了新密码）
+        if (updateData.containsKey("password")) {
+            String newPassword = (String) updateData.get("password");
+            if (newPassword != null && !newPassword.isEmpty()) {
+                user.setPassword(passwordEncoder.encode(newPassword));
+            }
+        }
+        
+        User updatedUser = userService.updateUser(user);
+        response.put("success", true);
+        response.put("message", "用户更新成功");
+        response.put("data", updatedUser);
+        return ResponseEntity.ok(response);
+    }
+    
+    // 重置用户密码
+    @PutMapping("/user/{id}/password")
+    public ResponseEntity<Map<String, Object>> resetPassword(@PathVariable Long id, @RequestBody Map<String, String> passwordData) {
+        Map<String, Object> response = new HashMap<>();
+        
+        String newPassword = passwordData.get("password");
+        if (newPassword == null || newPassword.isEmpty()) {
+            response.put("success", false);
+            response.put("message", "新密码不能为空");
+            return ResponseEntity.badRequest().body(response);
+        }
+        
+        Optional<User> userOptional = userService.getUserById(id);
+        if (!userOptional.isPresent()) {
+            response.put("success", false);
+            response.put("message", "用户不存在");
+            return ResponseEntity.notFound().build();
+        }
+        
+        User user = userOptional.get();
+        user.setPassword(passwordEncoder.encode(newPassword));
+        User updatedUser = userService.updateUser(user);
+        
+        response.put("success", true);
+        response.put("message", "密码重置成功");
+        response.put("data", updatedUser);
         return ResponseEntity.ok(response);
     }
 
