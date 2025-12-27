@@ -44,27 +44,34 @@ public class UserController {
     
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> credentials) {
-        // 添加日志以便调试
-        System.out.println("=== LOGIN REQUEST RECEIVED ===");
-        System.out.println("Received login request: " + credentials);
-        
         String username = credentials.get("username");
         String password = credentials.get("password");
-        
-        // 添加更多调试信息
-        System.out.println("Attempting to login user: " + username);
-        
+
         Map<String, Object> response = new HashMap<>();
         Optional<User> userOptional = userService.login(username, password);
-        
-        System.out.println("User found: " + userOptional.isPresent());
-        
+        // 角色为学生，选择年级不能为空
+        if (userOptional.get().getRole().equals("STUDENT") && null == credentials.get("grade")) {
+            response.put("message", "年级不能为空！");
+            return ResponseEntity.ok(response);
+        }
+
+        // 登录时，尝试查询该用户信息，返回其年级信息
+        Optional<User> userExists = userService.getUserByUsername(username);
+        if (!userOptional.get().getRole().equals("ADMIN")&& !userOptional.get().getRole().equals("TEACHER")){
+            if (userExists.isPresent() && Integer.parseInt(credentials.get("grade")) != userExists.get().getGrade()) {
+                User user1 = userExists.get();
+                String gradeInfo = user1.getGrade() != null ? user1.getGrade() + "年级" : "未选择年级";
+                response.put("message", "用户名或密码错误（您注册的是" + gradeInfo + ")");
+                response.put("grade", user1.getGrade());
+                return ResponseEntity.ok(response);
+            }
+        }
+
+
         if (userOptional.isPresent()) {
             User user = userOptional.get();
-            System.out.println("User details - ID: " + user.getId() + ", Username: " + user.getUsername());
             String token = jwtUtil.generateToken(user.getUsername());
-            System.out.println("Generated token: " + token);
-            
+
             Map<String, Object> userData = new HashMap<>();
             userData.put("id", user.getId());
             userData.put("username", user.getUsername());
@@ -77,24 +84,9 @@ public class UserController {
             response.put("message", "登录成功");
             response.put("data", userData);
             response.put("token", token);
-            System.out.println("=== LOGIN SUCCESSFUL ===");
             return ResponseEntity.ok(response);
         } else {
-            System.out.println("Login failed for user: " + username);
             response.put("success", false);
-            
-            // 登录失败时，尝试查询该用户信息，返回其年级信息
-            Optional<User> userExists = userService.getUserByUsername(username);
-            if (userExists.isPresent()) {
-                User user = userExists.get();
-                String gradeInfo = user.getGrade() != null ? user.getGrade() + "年级" : "未选择年级";
-                response.put("message", "用户名或密码错误（您注册的是" + gradeInfo + ")");
-                response.put("grade", user.getGrade());
-            } else {
-                response.put("message", "用户名或密码错误");
-            }
-            
-            System.out.println("=== LOGIN FAILED ===");
             return ResponseEntity.status(401).body(response);
         }
     }
