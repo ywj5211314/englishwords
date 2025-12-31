@@ -27,17 +27,12 @@ public class UserService {
     }
     
     public Optional<User> login(String username, String password) {
-        System.out.println("Attempting to find user: " + username);
         Optional<User> userOptional = userRepository.findByUsername(username);
-        System.out.println("User found in DB: " + userOptional.isPresent());
         
         if (userOptional.isPresent()) {
             User user = userOptional.get();
-            System.out.println("Stored password hash: " + user.getPassword());
-            System.out.println("Provided password: " + password);
             
             boolean passwordMatches = passwordEncoder.matches(password, user.getPassword());
-            System.out.println("Password matches: " + passwordMatches);
             
             if (passwordMatches) {
                 return userOptional;

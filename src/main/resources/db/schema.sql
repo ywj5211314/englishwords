@@ -36,6 +36,8 @@ CREATE TABLE `englishwords`.`word` (
   `chinese` VARCHAR(255) NOT NULL COMMENT '中文翻译',
   `grade` INT NOT NULL COMMENT '年级',
   `unit` INT NOT NULL COMMENT '单元',
+  `teacher_id` BIGINT DEFAULT NULL COMMENT '老师ID(单词录入的老师)',
+  `teacher_name` VARCHAR(100) DEFAULT NULL COMMENT '老师名字',
   `created_at` DATETIME DEFAULT NULL COMMENT '创建时间',
   `updated_at` DATETIME DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`id`),
@@ -78,12 +80,17 @@ CREATE TABLE `englishwords`.`word_feedback` (
   `original_chinese` VARCHAR(200) DEFAULT NULL COMMENT '原单词中文',
   `feedback_content` TEXT COMMENT '反馈内容',
   `status` VARCHAR(20) DEFAULT 'PENDING' COMMENT '反馈状态：PENDING-待处理, RESOLVED-已解决, REJECTED-已拒绝',
+  `teacher_id` BIGINT DEFAULT NULL COMMENT '老师ID(单词录入的老师)',
+  `teacher_name` VARCHAR(100) DEFAULT NULL COMMENT '老师名字',
+  `grade` INT DEFAULT NULL COMMENT '单词年级',
+  `unit` INT DEFAULT NULL COMMENT '单词单元',
   `admin_remark` TEXT COMMENT '管理员处理备注',
   `created_at` DATETIME DEFAULT NULL COMMENT '创建时间',
   `resolved_at` DATETIME DEFAULT NULL COMMENT '处理时间',
   PRIMARY KEY (`id`),
   INDEX `idx_word_feedback_status` (`status`),
-  INDEX `idx_word_feedback_user` (`user_id`)
+  INDEX `idx_word_feedback_user` (`user_id`),
+  INDEX `idx_word_feedback_teacher` (`teacher_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='单词反馈表';
 
 -- 创建单词提交审批表

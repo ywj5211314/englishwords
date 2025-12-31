@@ -36,6 +36,12 @@ public class WordFeedback {
     private String username;
     
     /**
+     * 单词录入的老师ID（用于关联反馈给具体的老师）
+     */
+    @Column(name = "teacher_id")
+    private Long teacherId;
+    
+    /**
      * 原单词英文
      */
     @Column(name = "original_english", length = 200)
@@ -76,4 +82,22 @@ public class WordFeedback {
      */
     @Column(name = "resolved_at")
     private LocalDateTime resolvedAt;
+    
+    /**
+     * 老师名字（录入单词的老师）
+     */
+    @Column(name = "teacher_name", length = 100)
+    private String teacherName;
+    
+    /**
+     * 单词的年级
+     */
+    @Column(name = "grade")
+    private Integer grade;
+    
+    /**
+     * 单词的单元
+     */
+    @Column(name = "unit")
+    private Integer unit;
 }

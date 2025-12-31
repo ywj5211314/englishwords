@@ -31,6 +31,16 @@ public class FeedbackController {
         Map<String, Object> response = new HashMap<>();
         
         try {
+            // 查询单词信息，获取老师ID、老师名字、年级和单元
+            Optional<Word> optionalWord = wordService.getWordById(feedback.getWordId());
+            if (optionalWord.isPresent()) {
+                Word word = optionalWord.get();
+                feedback.setTeacherId(word.getTeacherId());
+                feedback.setTeacherName(word.getTeacherName());
+                feedback.setGrade(word.getGrade());
+                feedback.setUnit(word.getUnit());
+            }
+            
             WordFeedback saved = feedbackService.createFeedback(feedback);
             response.put("success", true);
             response.put("message", "反馈提交成功，感谢您的反馈！");
@@ -176,6 +186,48 @@ public class FeedbackController {
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "操作失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    /**
+     * 老师查看对自己录入单词的反馈
+     */
+    @GetMapping("/teacher/{teacherId}")
+    public ResponseEntity<Map<String, Object>> getTeacherFeedbacks(@PathVariable Long teacherId) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            List<WordFeedback> feedbacks = feedbackService.getFeedbacksByTeacherId(teacherId);
+            response.put("success", true);
+            response.put("data", feedbacks);
+            response.put("count", feedbacks.size());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "获取反馈列表失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    /**
+     * 老师根据状态查看反馈
+     */
+    @GetMapping("/teacher/{teacherId}/status/{status}")
+    public ResponseEntity<Map<String, Object>> getTeacherFeedbacksByStatus(
+            @PathVariable Long teacherId,
+            @PathVariable String status) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            List<WordFeedback> feedbacks = feedbackService.getFeedbacksByTeacherIdAndStatus(teacherId, status);
+            response.put("success", true);
+            response.put("data", feedbacks);
+            response.put("count", feedbacks.size());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "获取反馈列表失败: " + e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
     }

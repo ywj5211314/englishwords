@@ -24,8 +24,18 @@ public class WordSubmissionController {
     @PostMapping("/submit")
     @PreAuthorize("hasRole('TEACHER')")
     public ResponseEntity<Map<String, Object>> submitWord(@RequestBody WordSubmission submission) {
-        WordSubmission savedSubmission = submissionService.submitWord(submission);
         Map<String, Object> response = new HashMap<>();
+        
+        // 校验单词是否已存在
+        List<String> duplicateWords = submissionService.validateWordSubmission(submission);
+        if (!duplicateWords.isEmpty()) {
+            response.put("success", false);
+            response.put("message", "以下单词数据库中已存在，不允许提交");
+            response.put("duplicateWords", duplicateWords);
+            return ResponseEntity.badRequest().body(response);
+        }
+        
+        WordSubmission savedSubmission = submissionService.submitWord(submission);
         response.put("success", true);
         response.put("message", "单词提交成功，等待管理员审批");
         response.put("data", savedSubmission);
@@ -119,6 +129,97 @@ public class WordSubmissionController {
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         response.put("count", count);
+        return ResponseEntity.ok(response);
+    }
+    
+    /**
+     * 批量批准单词
+     */
+    @PostMapping("/batch-approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> batchApproveSubmissions(
+            @RequestBody Map<String, Object> request) {
+        @SuppressWarnings("unchecked")
+        java.util.List<Object> idList = (java.util.List<Object>) request.get("ids");
+        String adminRemark = (String) request.getOrDefault("adminRemark", "");
+        
+        // 将Integer或Long转换为Long
+        java.util.List<Long> ids = new java.util.ArrayList<>();
+        if (idList != null) {
+            for (Object id : idList) {
+                if (id instanceof Long) {
+                    ids.add((Long) id);
+                } else if (id instanceof Integer) {
+                    ids.add(((Integer) id).longValue());
+                }
+            }
+        }
+        
+        if (ids == null || ids.isEmpty()) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "请选择至少一个单词");
+            return ResponseEntity.badRequest().body(response);
+        }
+        
+        Map<String, Object> result = submissionService.batchApproveSubmissions(ids, adminRemark);
+        Map<String, Object> response = new HashMap<>();
+        int successCount = (int) result.get("successCount");
+        int failCount = (int) result.get("failCount");
+        
+        response.put("success", true);
+        response.put("message", String.format("成功批准 %d 个单词，失败 %d 个", successCount, failCount));
+        response.put("successCount", successCount);
+        response.put("failCount", failCount);
+        return ResponseEntity.ok(response);
+    }
+    
+    /**
+     * 批量拒绝单词
+     */
+    @PostMapping("/batch-reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> batchRejectSubmissions(
+            @RequestBody Map<String, Object> request) {
+        @SuppressWarnings("unchecked")
+        java.util.List<Object> idList = (java.util.List<Object>) request.get("ids");
+        String adminRemark = (String) request.get("adminRemark");
+        
+        // 将Integer或Long转换为Long
+        java.util.List<Long> ids = new java.util.ArrayList<>();
+        if (idList != null) {
+            for (Object id : idList) {
+                if (id instanceof Long) {
+                    ids.add((Long) id);
+                } else if (id instanceof Integer) {
+                    ids.add(((Integer) id).longValue());
+                }
+            }
+        }
+        
+        if (ids == null || ids.isEmpty()) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "请选择至少一个单词");
+            return ResponseEntity.badRequest().body(response);
+        }
+        
+        if (adminRemark == null || adminRemark.trim().isEmpty()) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "请填写拒绝原因");
+            return ResponseEntity.badRequest().body(response);
+        }
+        
+        Map<String, Object> result = submissionService.batchRejectSubmissions(ids, adminRemark);
+        Map<String, Object> response = new HashMap<>();
+        int successCount = (int) result.get("successCount");
+        int failCount = (int) result.get("failCount");
+        
+        response.put("success", true);
+        response.put("message", String.format("成功拒绝 %d 个单词，失败 %d 个", successCount, failCount));
+        response.put("successCount", successCount);
+        response.put("failCount", failCount);
         return ResponseEntity.ok(response);
     }
 }

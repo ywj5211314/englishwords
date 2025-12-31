@@ -19,8 +19,9 @@ public class SM4Util {
         Security.addProvider(new BouncyCastleProvider());
     }
     
-    // 默认密钥，实际应用中应该从配置文件读取或动态生成
-    private static final String DEFAULT_KEY = "englishwordsapp1234567890abcd";
+    // 默认密钥（16字节/128位）- SM4算法要求
+    // "1234567890123456" = 16字节
+    private static final String DEFAULT_KEY = "1234567890123456";
     
     /**
      * SM4加密

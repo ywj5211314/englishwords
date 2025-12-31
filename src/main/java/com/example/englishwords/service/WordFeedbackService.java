@@ -95,4 +95,18 @@ public class WordFeedbackService {
     public long countPendingFeedbacks() {
         return feedbackRepository.countByStatus("PENDING");
     }
+    
+    /**
+     * 根据老师ID获取反馈
+     */
+    public List<WordFeedback> getFeedbacksByTeacherId(Long teacherId) {
+        return feedbackRepository.findByTeacherIdOrderByCreatedAtDesc(teacherId);
+    }
+    
+    /**
+     * 根据老师ID和状态获取反馈
+     */
+    public List<WordFeedback> getFeedbacksByTeacherIdAndStatus(Long teacherId, String status) {
+        return feedbackRepository.findByTeacherIdAndStatusOrderByCreatedAtDesc(teacherId, status);
+    }
 }

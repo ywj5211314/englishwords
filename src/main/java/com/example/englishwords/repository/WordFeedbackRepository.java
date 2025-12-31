@@ -33,4 +33,14 @@ public interface WordFeedbackRepository extends JpaRepository<WordFeedback, Long
      * 统计待处理的反馈数量
      */
     long countByStatus(String status);
+    
+    /**
+     * 根据老师ID查询反馈
+     */
+    List<WordFeedback> findByTeacherIdOrderByCreatedAtDesc(Long teacherId);
+    
+    /**
+     * 根据老师ID和状态查询反馈
+     */
+    List<WordFeedback> findByTeacherIdAndStatusOrderByCreatedAtDesc(Long teacherId, String status);
 }

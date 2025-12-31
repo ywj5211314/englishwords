@@ -41,22 +41,6 @@ public class WordUploadController {
             @RequestParam("grade") Integer grade,
             @RequestParam("unit") Integer unit) {
         
-        System.out.println("=== UPLOAD IMAGE REQUEST RECEIVED ===");
-        System.out.println("Grade: " + grade + ", Unit: " + unit);
-        System.out.println("Image file: " + (image != null ? image.getOriginalFilename() : "null"));
-        
-        // 调试信息：检查所有请求参数
-        System.out.println("All request parameters:");
-        System.out.println("  Grade parameter: " + grade);
-        System.out.println("  Unit parameter: " + unit);
-        System.out.println("  Image parameter: " + (image != null ? "present" : "null"));
-        if (image != null) {
-            System.out.println("  Image details:");
-            System.out.println("    Original filename: " + image.getOriginalFilename());
-            System.out.println("    Content type: " + image.getContentType());
-            System.out.println("    Size: " + image.getSize());
-        }
-        
         Map<String, Object> response = new HashMap<>();
         
         try {
@@ -64,7 +48,6 @@ public class WordUploadController {
             if (grade == null || unit == null) {
                 response.put("success", false);
                 response.put("message", "年级和单元不能为空");
-                System.err.println("Grade or unit is missing");
                 return ResponseEntity.badRequest().body(response);
             }
             
@@ -72,7 +55,6 @@ public class WordUploadController {
             if (image == null || image.isEmpty()) {
                 response.put("success", false);
                 response.put("message", "请选择要上传的图片文件");
-                System.err.println("No image file provided");
                 return ResponseEntity.badRequest().body(response);
             }
             
@@ -81,18 +63,14 @@ public class WordUploadController {
             if (contentType == null || (!contentType.startsWith("image/"))) {
                 response.put("success", false);
                 response.put("message", "请上传有效的图片文件 (JPEG, PNG, GIF等)");
-                System.err.println("Invalid file type: " + contentType);
                 return ResponseEntity.badRequest().body(response);
             }
             
             // 使用OCR识别图片中的文本
-            System.out.println("Starting OCR processing...");
             String extractedText = ocrService.extractTextFromImage(image, "eng+chi_sim");
-            System.out.println("OCR completed. Extracted text length: " + (extractedText != null ? extractedText.length() : 0));
             
             // 解析识别出的文本，提取英语单词和中文翻译
             List<Word> words = parseWordsFromText(extractedText, grade, unit);
-            System.out.println("Parsed " + words.size() + " words from text");
             
             // 保存单词到数据库
             List<Word> savedWords = new ArrayList<>();
@@ -106,26 +84,19 @@ public class WordUploadController {
             response.put("data", savedWords);
             response.put("extractedText", extractedText);
             
-            System.out.println("=== UPLOAD IMAGE SUCCESSFUL ===");
             return ResponseEntity.ok(response);
             
         } catch (IOException e) {
             response.put("success", false);
             response.put("message", "图片读取失败: " + e.getMessage());
-            System.err.println("IO Exception during image processing: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.badRequest().body(response);
         } catch (TesseractException e) {
             response.put("success", false);
             response.put("message", "OCR识别失败: " + e.getMessage());
-            System.err.println("Tesseract Exception during OCR processing: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.badRequest().body(response);
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "服务器内部错误: " + e.getMessage());
-            System.err.println("Unexpected Exception during image processing: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.status(500).body(response);
         }
     }
@@ -144,17 +115,12 @@ public class WordUploadController {
     private List<Word> parseWordsFromText(String text, Integer grade, Integer unit) {
         List<Word> words = new ArrayList<>();
         
-        System.out.println("=== Parsing text ===");
-        System.out.println("Raw text: " + text);
-        
         // 按行分割文本
         String[] lines = text.split("\\n");
         
         for (String line : lines) {
             line = line.trim();
             if (line.isEmpty()) continue;
-            
-            System.out.println("Processing line: " + line);
             
             // 移除行首的*号和其他特殊字符
             line = line.replaceAll("^[*\\s]+", "");
@@ -164,11 +130,9 @@ public class WordUploadController {
             
             if (word != null && isValidWord(word)) {
                 words.add(word);
-                System.out.println("Extracted word: " + word.getEnglish() + " -> " + word.getChinese());
             }
         }
         
-        System.out.println("Total words extracted: " + words.size());
         return words;
     }
     
@@ -190,7 +154,6 @@ public class WordUploadController {
         }
         
         if (chineseStart <= 0) {
-            System.out.println("No Chinese found in line: " + line);
             return null;
         }
         
@@ -218,7 +181,6 @@ public class WordUploadController {
         chinesePart = cleanChinese.toString().trim();
         
         if (englishPart.isEmpty() || chinesePart.isEmpty()) {
-            System.out.println("Empty english or chinese: english='" + englishPart + "', chinese='" + chinesePart + "'");
             return null;
         }
         
@@ -302,23 +264,19 @@ public class WordUploadController {
             response.put("data", words);
             response.put("extractedText", extractedText);
             
-            System.out.println("=== RECOGNIZE ONLY SUCCESSFUL, " + words.size() + " words found ===");
             return ResponseEntity.ok(response);
             
         } catch (IOException e) {
             response.put("success", false);
             response.put("message", "图片读取失败: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.badRequest().body(response);
         } catch (TesseractException e) {
             response.put("success", false);
             response.put("message", "OCR识别失败: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.badRequest().body(response);
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "服务器内部错误: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.status(500).body(response);
         }
     }
@@ -330,9 +288,6 @@ public class WordUploadController {
      */
     @PostMapping("/batch-save")
     public ResponseEntity<Map<String, Object>> batchSave(@RequestBody List<Word> words) {
-        System.out.println("=== BATCH SAVE REQUEST RECEIVED ===");
-        System.out.println("Number of words to save: " + (words != null ? words.size() : 0));
-        
         Map<String, Object> response = new HashMap<>();
         
         try {
@@ -352,8 +307,6 @@ public class WordUploadController {
                 if (isValidWord(word)) {
                     Word savedWord = wordService.addWord(word);
                     savedWords.add(savedWord);
-                } else {
-                    System.out.println("Skipping invalid word: " + word.getEnglish() + " - " + word.getChinese());
                 }
             }
             
@@ -361,13 +314,11 @@ public class WordUploadController {
             response.put("message", "成功保存 " + savedWords.size() + " 个单词");
             response.put("data", savedWords);
             
-            System.out.println("=== BATCH SAVE SUCCESSFUL, " + savedWords.size() + " words saved ===");
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "保存失败: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.status(500).body(response);
         }
     }

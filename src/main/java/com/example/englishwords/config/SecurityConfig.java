@@ -20,10 +20,8 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        // 临时使用明文密码编码器解决401问题
-        return new com.example.englishwords.util.PlainTextPasswordEncoder();
-        // 原来的SM4密码编码器
-        // return new com.example.englishwords.util.SM4PasswordEncoder();
+        // 使用SM4密码编码器进行密码加密
+        return new com.example.englishwords.util.SM4PasswordEncoder();
     }
 
     @Bean
@@ -49,8 +47,6 @@ public class SecurityConfig {
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-        // 添加调试信息
-        System.out.println("Security配置已加载");
         return http.build();
     }
 }

@@ -22,6 +22,20 @@ public class WordSubmissionService {
     private WordRepository wordRepository;
     
     /**
+     * 验证提交的单词是否已存在（根据英文单词回源）
+     */
+    public java.util.List<String> validateWordSubmission(WordSubmission submission) {
+        java.util.List<String> duplicateWords = new java.util.ArrayList<>();
+        
+        // 检查单词是否存在于word表中
+        if (wordRepository.existsByEnglish(submission.getEnglish())) {
+            duplicateWords.add(submission.getEnglish());
+        }
+        
+        return duplicateWords;
+    }
+    
+    /**
      * 老师提交单词
      */
     public WordSubmission submitWord(WordSubmission submission) {
@@ -62,6 +76,8 @@ public class WordSubmissionService {
             word.setChinese(submission.getChinese());
             word.setGrade(submission.getGrade());
             word.setUnit(submission.getUnit());
+            word.setTeacherId(submission.getTeacherId());
+            word.setTeacherName(submission.getTeacherName());
             word.setCreatedAt(LocalDateTime.now());
             word.setUpdatedAt(LocalDateTime.now());
             wordRepository.save(word);
@@ -84,6 +100,60 @@ public class WordSubmissionService {
             return submissionRepository.save(submission);
         }
         return null;
+    }
+    
+    /**
+     * 批量批准单词
+     */
+    @Transactional
+    public java.util.Map<String, Object> batchApproveSubmissions(java.util.List<Long> ids, String adminRemark) {
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        int successCount = 0;
+        int failCount = 0;
+        
+        for (Long id : ids) {
+            try {
+                WordSubmission submission = approveSubmission(id, adminRemark);
+                if (submission != null) {
+                    successCount++;
+                } else {
+                    failCount++;
+                }
+            } catch (Exception e) {
+                failCount++;
+            }
+        }
+        
+        result.put("successCount", successCount);
+        result.put("failCount", failCount);
+        return result;
+    }
+    
+    /**
+     * 批量拒绝单词
+     */
+    @Transactional
+    public java.util.Map<String, Object> batchRejectSubmissions(java.util.List<Long> ids, String adminRemark) {
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        int successCount = 0;
+        int failCount = 0;
+        
+        for (Long id : ids) {
+            try {
+                WordSubmission submission = rejectSubmission(id, adminRemark);
+                if (submission != null) {
+                    successCount++;
+                } else {
+                    failCount++;
+                }
+            } catch (Exception e) {
+                failCount++;
+            }
+        }
+        
+        result.put("successCount", successCount);
+        result.put("failCount", failCount);
+        return result;
     }
     
     /**
